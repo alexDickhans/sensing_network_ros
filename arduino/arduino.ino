@@ -9,8 +9,8 @@
         5. Prints all incoming messages while the connection is open
 
     NOTE:
-    The sketch dosen't check or indicate about errors while connecting to 
-    WiFi or to the websockets server. For full example you might want 
+    The sketch dosen't check or indicate about errors while connecting to
+    WiFi or to the websockets server. For full example you might want
     to try the example named "Esp32-Client".
 
 	Hardware:
@@ -53,7 +53,7 @@ void setup() {
   Serial.begin(115200);
   // Connect to wifi
   WiFi.begin(ssid, password);
-  
+
   Serial.println("start");
 
   // Wait some time to connect to wifi
@@ -69,17 +69,20 @@ void setup() {
   client.onEvent(onEventsCallback);
 
   // Connect to server
-  bool result = client.connect(websockets_server_host);
-
-  Serial.println(result ? "true" : "false");
-
-  // Send a message
-  client.send("Hello Server");
-
-  // Send a ping
-  client.ping();
+  while(!client.connect(websockets_server_host)) {
+    Serial.println("again");
+    delay(500);
+  }
 }
 
 void loop() {
   client.poll();
+  delay(1);
+
+  if (client.available()) {
+    // Send a message
+    client.send(String(millis() % 5) + "," + String(random(10)));
+  } else {
+    client.connect(websockets_server_host);
+  }
 }
