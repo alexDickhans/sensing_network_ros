@@ -9,7 +9,7 @@ class SensingNetwork(Node):
 
     def __init__(self, size):
         super().__init__('sensing_network')
-        self.publisher_ = self.create_publisher(Int8MultiArray, 'topic', 10)
+        self.publisher_ = self.create_publisher(Int8MultiArray, 'contacts', 10)
         timer_period = 0.01  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.data = [0] * size
@@ -36,7 +36,7 @@ class SensingNetwork(Node):
                 self.get_logger().error("Couldn't parse websocket input: %s" % e)
 
     async def asyncRoutine(self):
-        async with serve(self.onMessage, "localhost", 8765):
+        async with serve(self.onMessage, "0.0.0.0", 8765):
             await asyncio.Future()  # run forever
 
     def start_async_loop(self):
