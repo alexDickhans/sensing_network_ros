@@ -23,6 +23,7 @@
 */
 
 #include <ArduinoWebsockets.h>
+#include <CapacitiveSensorR4.h>
 #include <WiFi.h>
 
 const char* ssid = "Home";                                       //Enter SSID
@@ -30,6 +31,18 @@ const char* password = "dickhans2845";                           //Enter Passwor
 const char* websockets_server_host = "ws://192.168.0.137:8765/";  //Enter server adress
 
 using namespace websockets;
+
+CapacitiveSensor sensor(4, 2);
+
+struct _TouchPointRange {
+  uint16_t index;
+  uint16_t min;
+  uint16_t max;
+} typedef TouchPointRange;
+
+TouchPointRange ranges[] = {
+  {0, 0, 100}
+};
 
 void onMessageCallback(WebsocketsMessage message) {
   Serial.print("Got Message: ");
@@ -81,7 +94,7 @@ void loop() {
 
   if (client.available()) {
     // Send a message
-    client.send(String(millis() % 5) + "," + String(random(10)));
+    client.send(String(millis() % 5 + 5) + "," + String(random(10)));
   } else {
     client.connect(websockets_server_host);
   }
