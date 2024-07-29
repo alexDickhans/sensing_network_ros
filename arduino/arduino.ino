@@ -22,12 +22,13 @@
 
 */
 
+
 #include <ArduinoWebsockets.h>
 #include <CapacitiveSensorR4.h>
 #include <WiFi.h>
 
-const char* ssid = "Home";                                       //Enter SSID
-const char* password = "dickhans2845";                           //Enter Password
+const char* ssid = "Home";                                        //Enter SSID
+const char* password = "dickhans2845";                            //Enter Password
 const char* websockets_server_host = "ws://192.168.0.137:8765/";  //Enter server adress
 
 using namespace websockets;
@@ -40,8 +41,9 @@ struct _TouchPointRange {
   uint16_t max;
 } typedef TouchPointRange;
 
-TouchPointRange ranges[] = {
-  {0, 0, 100}
+TouchPointRange touchRanges[] = {
+  { 0, 1440, 1758 },
+  { 1, 1423, 1446 },
 };
 
 void onMessageCallback(WebsocketsMessage message) {
@@ -82,7 +84,7 @@ void setup() {
   client.onEvent(onEventsCallback);
 
   // Connect to server
-  while(!client.connect(websockets_server_host)) {
+  while (!client.connect(websockets_server_host)) {
     Serial.println("again");
     delay(500);
   }
@@ -92,10 +94,16 @@ void loop() {
   client.poll();
   delay(1);
 
-  if (client.available()) {
+  if (client.available() && millis() % 10 == 0) {
     // Send a message
-    client.send(String(millis() % 5 + 5) + "," + String(random(10)));
-  } else {
+    auto reading = sensor.capacitiveSensorRaw(200);
+
+    for (size_t i = 0; i < sizeof(touchRanges) / sizeof(touchRanges[0]); i++) {
+      bool touchReading = reading > touchRanges[i].min && reading < touchRanges[i].max;
+      client.send(String(touchRanges[i].index) + "," + String(touchReading));
+    }
+
+  } else if (!client.available() && millis() % 50) {
     client.connect(websockets_server_host);
   }
 }

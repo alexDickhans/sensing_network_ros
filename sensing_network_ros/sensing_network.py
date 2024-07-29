@@ -29,9 +29,12 @@ class SensingNetwork(Node):
 
         async for message in websocket:
             try:
-                data = message.split(",")
+                data = message.split("\n").split(",")
 
-                self.data[int(data[0])] = int(data[1])
+                for i in data:
+                    if (len(i) == 2):
+                        self.data[int(i[0])] = int(i[1])
+
             except Exception as e:
                 self.get_logger().error("Couldn't parse websocket input: %s" % e)
 

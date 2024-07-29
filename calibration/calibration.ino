@@ -8,6 +8,11 @@ struct _TouchPointRange {
   uint16_t max;
 } typedef TouchPointRange;
 
+TouchPointRange* touchRanges;
+int numTouchPoints;
+int startIndex;
+int samples;
+
 void setup() {
   Serial.begin(115200);
 
@@ -19,7 +24,7 @@ void setup() {
 
   Serial.println("How many touch points?");
 
-  int numTouchPoints = atoi(Serial.readStringUntil('\n').c_str());
+  numTouchPoints = atoi(Serial.readStringUntil('\n').c_str());
 
   if (numTouchPoints < 1) {
     Serial.println("Too few touch points, restart");
@@ -28,7 +33,7 @@ void setup() {
 
   Serial.printf("You selected %d touch points.\n\nWhat should the start index be?\n", numTouchPoints);
 
-  int startIndex = atoi(Serial.readStringUntil('\n').c_str());
+  startIndex = atoi(Serial.readStringUntil('\n').c_str());
 
   if (startIndex < 0) {
     Serial.println("Index must be positive, restart\n\n");
@@ -37,7 +42,7 @@ void setup() {
 
   Serial.printf("You selected %d start index.\n\nHow many samples should it take?\n", startIndex);
 
-  int samples = atoi(Serial.readStringUntil('\n').c_str());
+  samples = atoi(Serial.readStringUntil('\n').c_str());
 
   if (samples < 5) {
     Serial.println("Sample count must be 5 or greater, restart\n\n");
@@ -46,11 +51,11 @@ void setup() {
 
   Serial.printf("You selected %d samples.\n\n", samples);
 
-  TouchPointRange* touchRanges = (TouchPointRange*) calloc(numTouchPoints, sizeof(TouchPointRange));
+  touchRanges = (TouchPointRange*) calloc(numTouchPoints, sizeof(TouchPointRange));
 
   for (size_t i = 0; i < numTouchPoints; i++) {
     Serial.printf("Touch point %d for 5 seconds\n ", startIndex +i);
-    delay(1000);
+    delay(3000);
 
     uint32_t startTime = millis();
 
@@ -75,8 +80,25 @@ void setup() {
 
     touchRanges[i] = {i + startIndex, lowValue, highValue};
   }
+
+  Serial.print("\n\n\n\TouchPointRange ranges[] = {\n");
+
+  for (size_t i = 0; i < numTouchPoints; i++) {
+    Serial.printf("{%d, %d, %d},\n", touchRanges[i].index, touchRanges[i].min, touchRanges[i].max);
+  }
+
+  Serial.print("}\n");
+
+  delay(5000);
 }
 
 void loop() {
-  ESP.restart();
+  auto reading = sensor.capacitiveSensorRaw(samples);
+
+  Serial.println(reading);
+
+  for (size_t i = 0; i < numTouchPoints; i++) {
+    bool touchReading = reading > touchRanges[i].min && reading < touchRanges[i].max;
+    Serial.printf("%d, %d\n", touchRanges[i].index, touchReading);
+  }
 }
