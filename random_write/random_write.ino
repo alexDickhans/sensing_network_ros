@@ -33,18 +33,8 @@ const char* websockets_server_host = "ws://192.168.0.221:8765/";  //Enter server
 
 using namespace websockets;
 
-CapacitiveSensor sensor(4, 2);
-
-struct _TouchPointRange {
-  uint16_t index;
-  uint16_t min;
-  uint16_t max;
-} typedef TouchPointRange;
-
-TouchPointRange touchRanges[] = {
-  { 0, 1440, 1758 },
-  { 1, 1423, 1446 },
-};
+uint32_t startIndex = 40;
+uint32_t len = 10;
 
 void onMessageCallback(WebsocketsMessage message) {
   Serial.print("Got Message: ");
@@ -82,11 +72,9 @@ void setup() {
 
   // run callback when events are occuring
   client.onEvent(onEventsCallback);
-
-  // Connect to server
-  while (!client.connect(websockets_server_host)) {
-    Serial.println("again");
-    delay(500);
+  
+  if (!client.connect(websockets_server_host)) {
+    Serial.println("Not connected!");
   }
 }
 
@@ -96,14 +84,13 @@ void loop() {
 
   if (client.available() && millis() % 10 == 0) {
     // Send a message
-    auto reading = sensor.capacitiveSensorRaw(200);
 
-    for (size_t i = 0; i < sizeof(touchRanges) / sizeof(touchRanges[0]); i++) {
-      bool touchReading = reading > touchRanges[i].min && reading < touchRanges[i].max;
-      client.send(String(touchRanges[i].index) + "," + String(touchReading));
+    for (size_t i = 0; i < len; i++) {
+      client.send(String(i + startIndex) + "," + String(random(2)));
     }
 
   } else if (!client.available() && millis() % 50) {
+    Serial.println("Not connected!");
     client.connect(websockets_server_host);
   }
 }
