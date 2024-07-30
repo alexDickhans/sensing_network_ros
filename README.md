@@ -25,10 +25,12 @@ Then install the Arduino Websockets package by [Gil Maimon](https://github.com/g
 
 #### Using the calibration script
 
-
+Open the "calibration" folder in this repository and run the script. Open the serial monitor in Arduino and follow the on-screen directions to complete the calibration procedure.
+At the end of this process, it will output the struct that is needed in the "arduino" file to have the calibration match to the robot.
 
 #### Uploading final code
 
+Copy and paste the struct from the calibration script and put it in the specified location in the "arduino/arduino.ino" file. This will make the real sensor reflect your calibration.
 Open the "arduino" project in this repository, and change the SSID and password to reflect your wifi network,
 and the IP address to reflect the local address of the websocket server computer. Additionally you can change the port as required.
 
