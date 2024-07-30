@@ -1,25 +1,8 @@
 /*
-	Minimal Esp32 Websockets Client
 
-	This sketch:
-        1. Connects to a WiFi network
-        2. Connects to a Websockets server
-        3. Sends the websockets server a message ("Hello Server")
-        4. Sends the websocket server a "ping"
-        5. Prints all incoming messages while the connection is open
 
-    NOTE:
-    The sketch dosen't check or indicate about errors while connecting to
-    WiFi or to the websockets server. For full example you might want
-    to try the example named "Esp32-Client".
 
-	Hardware:
-        For this sketch you only need an ESP8266 board.
-
-	Created 15/02/2019
-	By Gil Maimon
-	https://github.com/gilmaimon/ArduinoWebsockets
-
+	Based on the Minimal Esp32 Websockets Client example from Gil Maimon
 */
 
 
@@ -27,6 +10,7 @@
 #include <CapacitiveSensorR4.h>
 #include <WiFi.h>
 
+// CONFIGURATION
 const char* ssid = "HIROLab2";                                        //Enter SSID
 const char* password = "HIROlab322";                            //Enter Password
 const char* websockets_server_host = "ws://192.168.0.221:8765/";  //Enter server adress
