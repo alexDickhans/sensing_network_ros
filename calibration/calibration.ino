@@ -1,6 +1,7 @@
 #include <ArduinoWebsockets.h>
 #include <WiFi.h>
 #include <CapacitiveSensorR4.h>
+#include "credentials.hpp"
 
 using namespace websockets;
 

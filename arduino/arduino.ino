@@ -9,10 +9,9 @@
 #include <ArduinoWebsockets.h>
 #include <CapacitiveSensorR4.h>
 #include <WiFi.h>
+#include "credentials.hpp"
 
 // CONFIGURATION
-const char* ssid = "HIROLab2";                                        //Enter SSID
-const char* password = "HIROlab322";                            //Enter Password
 const char* websockets_server_host = "ws://192.168.0.184:8765/";  //Enter server adress
 
 CapacitiveSensor sensor(4,2);
@@ -20,7 +19,7 @@ CapacitiveSensor sensor(4,2);
 uint32_t lastSend = 0;
 
 uint16_t touchPoints[] = {26, 27, 28, 29};
-uint32_t minValue = 0;
+long unsigned int minValue = 0;
 
 uint32_t numSamples = 200;
 
@@ -89,7 +88,7 @@ void loop() {
     auto reading = sensor.capacitiveSensorRaw(numSamples);
 
     Serial.println(reading);
-    
+
     bool binaryReading = minValue < reading;
 
     for (size_t i = 0; i < sizeof(touchPoints) / sizeof(touchPoints[0]); i++) {
