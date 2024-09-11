@@ -13,22 +13,18 @@
 // CONFIGURATION
 const char* ssid = "HIROLab2";                                        //Enter SSID
 const char* password = "HIROlab322";                            //Enter Password
-const char* websockets_server_host = "ws://192.168.0.221:8765/";  //Enter server adress
+const char* websockets_server_host = "ws://192.168.0.184:8765/";  //Enter server adress
+
+CapacitiveSensor sensor(4,2);
+
+uint32_t lastSend = 0;
+
+uint16_t touchPoints[] = {26, 27, 28, 29};
+uint32_t minValue = 0;
+
+uint32_t numSamples = 200;
 
 using namespace websockets;
-
-CapacitiveSensor sensor(4, 2);
-
-struct _TouchPointRange {
-  uint16_t index;
-  uint16_t min;
-  uint16_t max;
-} typedef TouchPointRange;
-
-TouchPointRange touchRanges[] = {
-  { 0, 1440, 1758 },
-  { 1, 1423, 1446 },
-};
 
 void onMessageCallback(WebsocketsMessage message) {
   Serial.print("Got Message: ");
@@ -49,6 +45,13 @@ void onEventsCallback(WebsocketsEvent event, String data) {
 
 WebsocketsClient client;
 void setup() {
+
+  for (size_t i = 0; i < 2000; i++) {
+    minValue = std::max(minValue, sensor.capacitiveSensorRaw(numSamples));
+  }
+
+  minValue = minValue * 10500000000000 / 10000000000000;
+
   Serial.begin(115200);
   // Connect to wifi
   WiFi.begin(ssid, password);
@@ -78,15 +81,20 @@ void loop() {
   client.poll();
   delay(1);
 
-  if (client.available() && millis() % 10 == 0) {
+  if (client.available() && millis() - lastSend > 9) {
+
+    lastSend = millis();
+
     // Send a message
-    auto reading = sensor.capacitiveSensorRaw(200);
+    auto reading = sensor.capacitiveSensorRaw(numSamples);
 
-    for (size_t i = 0; i < sizeof(touchRanges) / sizeof(touchRanges[0]); i++) {
-      bool touchReading = reading > touchRanges[i].min && reading < touchRanges[i].max;
-      client.send(String(touchRanges[i].index) + "," + String(touchReading));
+    Serial.println(reading);
+    
+    bool binaryReading = minValue < reading;
+
+    for (size_t i = 0; i < sizeof(touchPoints) / sizeof(touchPoints[0]); i++) {
+      client.send(String(touchPoints[i]) + "," + String(binaryReading));
     }
-
   } else if (!client.available() && millis() % 50) {
     client.connect(websockets_server_host);
   }

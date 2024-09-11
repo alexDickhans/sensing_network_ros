@@ -1,6 +1,17 @@
+#include <ArduinoWebsockets.h>
+#include <WiFi.h>
 #include <CapacitiveSensorR4.h>
 
-CapacitiveSensor sensor(2, 4);
+using namespace websockets;
+
+// CONFIGURATION
+const char* ssid = "HIROLab2";                                        //Enter SSID
+const char* password = "HIROlab322";                            //Enter Password
+const char* websockets_server_host = "ws://192.168.0.152:8765/";  //Enter server adress
+
+CapacitiveSensor sensor(4, 2);
+
+WebsocketsClient client;
 
 struct _TouchPointRange {
   uint16_t index;
@@ -11,94 +22,132 @@ struct _TouchPointRange {
 TouchPointRange* touchRanges;
 int numTouchPoints;
 int startIndex;
-int samples;
+int samples = 200;
+
+void onEventsCallback(WebsocketsEvent event, String data) {
+  if (event == WebsocketsEvent::ConnectionOpened) {
+    Serial.println("Connnection Opened");
+  } else if (event == WebsocketsEvent::ConnectionClosed) {
+    Serial.println("Connnection Closed");
+  } else if (event == WebsocketsEvent::GotPing) {
+    Serial.println("Got a Ping!");
+  } else if (event == WebsocketsEvent::GotPong) {
+    Serial.println("Got a Pong!");
+  }
+}
+
+void print(String data) {
+  client.send(data.c_str());
+  Serial.println(data);
+}
 
 void setup() {
   Serial.begin(115200);
+  // Connect to wifi
+  WiFi.begin(ssid, password);
 
-  Serial.setTimeout(80000);
+  Serial.println("start");
 
-  while (!Serial) {
-    delay(10);
+  // Wait some time to connect to wifi
+  for (int i = 0; i < 10 && WiFi.status() != WL_CONNECTED; i++) {
+    Serial.print(".");
+    delay(1000);
   }
 
-  Serial.println("How many touch points?");
+  // // run callback when messages are received
+  // client.onMessage(onMessageCallback);
 
-  numTouchPoints = atoi(Serial.readStringUntil('\n').c_str());
+  // run callback when events are occuring
+  client.onEvent(onEventsCallback);
 
-  if (numTouchPoints < 1) {
-    Serial.println("Too few touch points, restart");
-    ESP.restart();
+  // Connect to server
+  while (!client.connect(websockets_server_host)) {
+    Serial.println("again");
+    delay(100);
   }
 
-  Serial.printf("You selected %d touch points.\n\nWhat should the start index be?\n", numTouchPoints);
+  print("How many touch points?");
 
-  startIndex = atoi(Serial.readStringUntil('\n').c_str());
+  // numTouchPoints = atoi(client.readBlocking().c_str());
 
-  if (startIndex < 0) {
-    Serial.println("Index must be positive, restart\n\n");
-    ESP.restart();
-  }
+  // if (numTouchPoints < 1) {
+  //   print("Too few touch points, restart");
+  //   ESP.restart();
+  // }
 
-  Serial.printf("You selected %d start index.\n\nHow many samples should it take?\n", startIndex);
+  // print("You selected " + String(numTouchPoints) + " touch points.\n\nWhat should the start index be?\n");
 
-  samples = atoi(Serial.readStringUntil('\n').c_str());
 
-  if (samples < 5) {
-    Serial.println("Sample count must be 5 or greater, restart\n\n");
-    ESP.restart();
-  }
+  // startIndex = atoi(client.readBlocking().c_str());
 
-  Serial.printf("You selected %d samples.\n\n", samples);
+  // if (startIndex < 0) {
+  //   print("Index must be positive, restart\n\n");
+  //   ESP.restart();
+  // }
 
-  touchRanges = (TouchPointRange*) calloc(numTouchPoints, sizeof(TouchPointRange));
+  // print("You selected " + String(startIndex) + " start index.\n\nHow many samples should it take?\n");
 
-  for (size_t i = 0; i < numTouchPoints; i++) {
-    Serial.printf("Touch point %d for 5 seconds\n ", startIndex +i);
-    delay(3000);
+  // samples = atoi(client.readBlocking().c_str());
 
-    uint32_t startTime = millis();
+  // if (samples < 5) {
+  //   print("Sample count must be 5 or greater, restart\n\n");
+  //   ESP.restart();
+  // }
 
-    uint32_t sample = sensor.capacitiveSensorRaw(samples);
+  // print("You selected " + String(samples) + " samples.\n\n");
 
-    uint32_t highValue = sample;
-    uint32_t lowValue = sample;
+  // touchRanges = (TouchPointRange*) calloc(numTouchPoints, sizeof(TouchPointRange));
 
-    while (millis() - startTime < 3000) {
-      sample = sensor.capacitiveSensorRaw(samples);
+  // for (size_t i = 0; i < numTouchPoints; i++) {
+  //   print("Touch point " + String(startIndex + i) + " for 5 seconds\n");
+  //   delay(3000);
 
-      if (sample == -2) {
-        // nothing
-      } else if (sample > highValue) {
-        highValue = sample;
-      } else if (sample < lowValue) {
-        lowValue = sample;
-      }
-    }
+  //   uint32_t startTime = millis();
 
-    Serial.printf("High value: %d, Low value: %d\n", highValue, lowValue);
+  //   uint32_t sample = sensor.capacitiveSensorRaw(samples);
 
-    touchRanges[i] = {i + startIndex, lowValue, highValue};
-  }
+  //   uint32_t highValue = sample;
+  //   uint32_t lowValue = sample;
 
-  Serial.print("\n\n\n\TouchPointRange ranges[] = {\n");
+  //   while (millis() - startTime < 3000) {
+  //     sample = sensor.capacitiveSensorRaw(samples);
 
-  for (size_t i = 0; i < numTouchPoints; i++) {
-    Serial.printf("{%d, %d, %d},\n", touchRanges[i].index, touchRanges[i].min, touchRanges[i].max);
-  }
+  //     if (sample == -2) {
+  //       // nothing
+  //     } else if (sample > highValue) {
+  //       highValue = sample;
+  //     } else if (sample < lowValue) {
+  //       lowValue = sample;
+  //     }
+  //   }
 
-  Serial.print("}\n");
+  //   print("High value: " + String(highValue) + ", Low value: " + String(lowValue) + "\n");
 
-  delay(5000);
+  //   touchRanges[i] = {i + startIndex, lowValue, highValue};
+  // }
+
+  // print("\n\n\n\TouchPointRange touchRanges[] = {\n");
+
+  // for (size_t i = 0; i < numTouchPoints; i++) {
+  //   print("{" + String(touchRanges[i].index) + ", " + String(touchRanges[i].min) + ", " + String(touchRanges[i].max) + "},\n");
+  // }
+
+  // print("};\n");
+
+  // delay(5000);
 }
 
 void loop() {
+  delay(10);
+
   auto reading = sensor.capacitiveSensorRaw(samples);
 
-  Serial.println(reading);
+  print(String(reading));
 
-  for (size_t i = 0; i < numTouchPoints; i++) {
-    bool touchReading = reading > touchRanges[i].min && reading < touchRanges[i].max;
-    Serial.printf("%d, %d\n", touchRanges[i].index, touchReading);
-  }
+  // for (size_t i = 0; i < numTouchPoints; i++) {
+  //   bool touchReading = reading > touchRanges[i].min && reading < touchRanges[i].max;
+  //   print(String(touchRanges[i].index) + ", " + String(touchReading));
+  // }
+
+  client.poll();
 }

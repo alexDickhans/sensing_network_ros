@@ -36,6 +36,8 @@ using namespace websockets;
 uint32_t startIndex = 40;
 uint32_t len = 10;
 
+uint32_t lastSend = 0;
+
 void onMessageCallback(WebsocketsMessage message) {
   Serial.print("Got Message: ");
   Serial.println(message.data());
@@ -82,7 +84,9 @@ void loop() {
   client.poll();
   delay(1);
 
-  if (client.available() && millis() % 10 == 0) {
+  if (client.available() && millis() - lastSend > 9) {
+
+    lastSend = millis();
     // Send a message
 
     for (size_t i = 0; i < len; i++) {
